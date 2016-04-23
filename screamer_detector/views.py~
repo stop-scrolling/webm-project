@@ -28,6 +28,8 @@ DOWNLOADERS_POOL_SIZE = 10
 ANALIZERS_POOL_SIZE = multiprocessing.cpu_count()
 MAIN_POOL_SIZE = DOWNLOADERS_POOL_SIZE + ANALIZERS_POOL_SIZE
 
+
+#TODO: JSON requests with URL lists and two modes: instant and continuous.
 #TODO: background prefetch threads
 
 def url_preprocess(parsed_url):

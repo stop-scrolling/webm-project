@@ -20,7 +20,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '9tbmmt8!u5z#un28hhy_hu58vytmu8#35mbfmea*nn%kpai1)r' #Don't look here, you dirty hacker!
+SECRET_KEY = '9tbmmt8!u5z#un28hhy_hu58vytmu8#35mbfmea*nn%kpai1)r'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -79,6 +79,42 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    }
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format' : "[%(asctime)s.%(msecs)03d] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+            'datefmt' : "%Y/%m/%d %H:%M:%S"
+        },
+    },
+    'handlers': {
+        'django': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'django.log',
+            'formatter': 'verbose'
+        },
+        'screamer_detector': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'screamer_detector.log',
+            'formatter': 'verbose'
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers':['django'],
+            'propagate': True,
+            'level':'DEBUG'
+        },
+        'screamer_detector': {
+            'handlers': ['screamer_detector'],
+            'level': 'DEBUG'
+        },
     }
 }
 
