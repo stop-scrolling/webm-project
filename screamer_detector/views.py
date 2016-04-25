@@ -17,6 +17,7 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
+from django.views.decorators.csrf import csrf_exempt
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,9 @@ DOWNLOADERS_POOL_SIZE = 10
 ANALIZERS_POOL_SIZE = multiprocessing.cpu_count()
 MAIN_POOL_SIZE = DOWNLOADERS_POOL_SIZE + ANALIZERS_POOL_SIZE
 
+
 #TODO: background prefetch threads
+#TODO: queue size limits?
 
 def url_preprocess(parsed_url):
 	if (not parsed_url.netloc in MIRRORS):
@@ -83,12 +86,14 @@ def analyze_video(url, filename):
 		logger.info('%s analize finished' % (url))
 		return results
 	except Exception as e:
-		logger.info('%s analize failed: %s' % (url, str(e)))
+		logger.exception('%s analize failed: %s' % url)
 		raise e
 
 analizers_pool = ThreadPoolExecutor(max_workers=ANALIZERS_POOL_SIZE)
 
 def main_process(url):
+	logger.info("%s processing started" % url)
+
 	# Look in DB
 	existing_url_object = URL.objects.filter(url=url).first()
 	if (existing_url_object):
@@ -161,12 +166,16 @@ def detect_screamers(request):
 		return HttpResponse(status=500)
 
 def lookup_url_in_db(url):
+	logger.debug('%s is being checked' % url)
 	url_object = URL.objects.filter(url=url).first()
 	if (not url_object):
+		logger.info("%s is unknown URL, it will be analized." % url)
 		main_pool.submit(main_process, url)
-	return url_object.max_volume if url_object else None
+	else:
+		logger.debug('%s was found in DB: %s' % (url, str(url_object)))
+	return url_object
 
-#TODO: return errors, so client could stop requesting failing URLs again and again
+@csrf_exempt
 def detect_screamers_batch(request):
 	if request.method == 'POST': # POST is used as list of URLs can be long
 		urls = request.POST['urls']
@@ -189,12 +198,20 @@ def detect_screamers_batch(request):
 				parsed_url = url_preprocess(urlparse(url))
 				fixed_url = parsed_url.geturl()
 
-				result = lookup_url_in_db(fixed_url)
+				url_object = lookup_url_in_db(fixed_url)
 
-				if (result):
-					responses[url] = result
+				if (not url_object):
+					continue # Skip url if it is valid, but wasn't analized yes
+
+				content_object = url_object.content
+
+				if (url_object.error):
+					responses[url] = None # Return null for URLs which were processed with error
+				else:
+					if (content_object.max_volume):
+						responses[url] = str(content_object.max_volume) # Return result for valid URLs
 			except Exception:
-				responses[url] = None
+				responses[url] = None # Return null for invalid URLs
 			
 		return HttpResponse(json.dumps(responses))
 	return HttpResponse('Only POST is supported by this method', status=500)

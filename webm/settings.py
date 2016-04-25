@@ -20,13 +20,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '9tbmmt8!u5z#un28hhy_hu58vytmu8#35mbfmea*nn%kpai1)r'
+SECRET_KEY = '9tbmmt8!u5z#un28hhy_hu58vytmu8#35mbfmea*nn%kpai1)r' #Don't look here, you dirty hacker!
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+SCREAMER_DETECTOR_LOG_FILE = 'screamer_detector.log'
 
+ALLOWED_HOSTS = ['127.0.0.1'] #TODO
 
 # Application definition
 
@@ -37,11 +38,15 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders', #CORS
     'screamer_detector',
+    #'sslify', #SSL
 )
 
 MIDDLEWARE_CLASSES = (
+    #'sslify.middleware.SSLifyMiddleware', #SSL
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware', #CORS
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -50,6 +55,15 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
 )
+
+#SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') #SSL
+#SECURE_SSL_REDIRECT = False #SSL
+
+#TODO
+CORS_ORIGIN_ALLOW_ALL = True #CORS
+#CORS_ORIGIN_WHITELIST = ('2ch.hk', '2ch.cm', '2ch.pm', '2ch.re', '2ch.tf', '2ch.wf', '2ch.yt', '2-ch.so') #CORS
+CORS_URLS_REGEX = r'^/api/.*$' #CORS
+CORS_ALLOW_METHODS = ('GET', 'POST') #CORS
 
 ROOT_URLCONF = 'webm.urls'
 
@@ -100,8 +114,10 @@ LOGGING = {
         },
         'screamer_detector': {
             'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': 'screamer_detector.log',
+            'class':'logging.handlers.RotatingFileHandler', #TODO: What's with "The process cannot access the file because it is being used by another process:" stuff during rollover?
+            'maxBytes': 1024 * 1024,
+            'backupCount': 50,
+            'filename': SCREAMER_DETECTOR_LOG_FILE,
             'formatter': 'verbose'
         },
     },

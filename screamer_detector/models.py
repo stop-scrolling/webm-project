@@ -21,7 +21,7 @@ class URL(models.Model):
 	error = models.CharField(max_length=512)
 
 	def __str__(self):
-		return self.url
+		return "%s error: '%s' content: '%s'" % (self.url, self.error, str(self.content))
 
 # class ProcessingQueue(models.Model):
 # 	url = models.CharField(max_length=2048, primary_key=True)

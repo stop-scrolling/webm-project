@@ -9,20 +9,19 @@ from concurrent.futures import Future
 
 from urllib.parse import urlparse
 
-MIN_SIZE = 2**10
-MAX_SIZE = 50*2**20
+MIN_SIZE = 1024
+MAX_SIZE = 50*1024*1024
 CHUNK_SIZE = 1024
 DOWNLOAD_TIMEOUT = 2*60
 ACCEPT_MIMETYPES = [None, 'video/webm']
 SUPPORTED_SCHEMES = ['http', 'https']
-FFPROBE_TIMEOUT=10
 FFMPEG_TIMEOUT=2*60
 
 #TODO: custom Exception type?
 
 '''This dict is used as a lookup table of "badness" of fast transition from one volume level to another.
 Volume values are grouped into ranges. Dict key values are upper bounds of range they represent.
-So look for lowest key value which is >= your value. Then get dict[former_volume_range_upper_bound][latter_volume_range_upper_bound]
+Look for lowest key value which is >= your value. Then get dict[former_volume_range_upper_bound][latter_volume_range_upper_bound]
 E.g. Change from loudness -27.1 to -5.7 have "badness" = FROM_TO_LOUDNESS_BADNESS[-25][-3] = 90 as -27 is in range (-30 .. -25) and -5 is in range (-6 .. -3)
 '''
 FROM_TO_LOUDNESS_BADNESS = {
@@ -124,7 +123,7 @@ def first_leq(n, lst):
 
 def badness(from_loudness, to_loudness):
 	'''Sudden great increase of volume may indicate screamer. Or not.
-	Anyway it is bad for ear.
+	Anyway it is bad for ears.
 	"badness" value may vary from 0 to 100.
 	We report max "badness" value as "screamer_chance".'''
 	from_range =  first_leq(from_loudness, FROM_TO_LOUDNESS_BADNESS.keys())
@@ -149,7 +148,7 @@ def analyze_data(data):
 					#print("%f -> %f: %d" % (this_second, previous_second, current_badness))
 	else:
 		badness_range = first_leq(max_integral_loudness, ABSOLUTE_LOUDNESS_BADNESS.keys())
-		screamer_chance = ABSOLUTE_LOUDNESS_BADNESS(badness_range)
+		screamer_chance = ABSOLUTE_LOUDNESS_BADNESS[badness_range]
 	#TODO: take range into account?
 	return {'max_volume': max_integral_loudness, 'screamer_chance': screamer_chance, 'duration_msec': data['duration_msec'], 'volume_range': data['range']}
 
